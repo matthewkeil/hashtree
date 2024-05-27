@@ -20,8 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-
 ###############################################################################
 # Constants and Configuration Variables
 ###############################################################################
@@ -38,7 +36,7 @@ testlibs = -lhashtree
 benchlibs = -lhashtree -lm
 
 ###############################################################################
-# Configuration
+# Platform Configuration
 ###############################################################################
 
 # Platform detection.
@@ -49,8 +47,7 @@ endif
 ifeq ($(OS),Windows_NT)
 	PLATFORM = Windows
 else
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Darwin)
+	ifeq ($(OS),Darwin)
 		PLATFORM = Darwin
 	else
 		PLATFORM = Linux
@@ -69,12 +66,13 @@ ifneq (,$(findstring aarch64,$(ARCH)))
 	ARMV8 := 1
 endif
 
-
-# Cross-platform compilation settings.
-ifeq ($(PLATFORM),Darwin)
-	CC = clang
-else
-	CC = gcc
+# Cross-platform compiler selection
+ifndef CC
+	ifeq ($(PLATFORM),Darwin)
+		CC = clang
+	else
+		CC = gcc
+	endif
 endif
 
 ifeq ($(CC),clang)
@@ -90,9 +88,11 @@ testlibs += -lcrypto
 endif
 
 ifeq ($(PLATFORM),Windows)
-libname = $(LIB_DIR)/libhashtree.lib
+	libname = $(LIB_DIR)/libhashtree.lib
+	AR = lib
 else
-libname = $(LIB_DIR)/libhashtree.a
+	libname = $(LIB_DIR)/libhashtree.a
+	AR = ar
 endif
 
 ###############################################################################
@@ -103,19 +103,20 @@ endif
 $(shell mkdir -p $(OBJ_DIR))
 $(shell mkdir -p $(LIB_DIR))
 
-objarm = $(OBJ_DIR)/sha256_armv8_neon_x4.o\
-         $(OBJ_DIR)/sha256_armv8_neon_x1.o\
-         $(OBJ_DIR)/sha256_armv8_crypto.o\
-         $(OBJ_DIR)/hashtree.o
-
-objx86 = $(OBJ_DIR)/sha256_shani.o\
-         $(OBJ_DIR)/sha256_avx_x16.o\
-         $(OBJ_DIR)/sha256_avx_x8.o\
-         $(OBJ_DIR)/sha256_avx_x4.o\
-         $(OBJ_DIR)/sha256_avx_x1.o\
-         $(OBJ_DIR)/sha256_sse_x1.o\
-         $(OBJ_DIR)/hashtree.o
-
+ifeq ($(ARM), 1)
+	OBJ_LIST = $(OBJ_DIR)/sha256_armv8_neon_x4.o\
+		$(OBJ_DIR)/sha256_armv8_neon_x1.o\
+		$(OBJ_DIR)/sha256_armv8_crypto.o\
+		$(OBJ_DIR)/hashtree.o
+else
+	OBJ_LIST = $(OBJ_DIR)/sha256_shani.o\
+		$(OBJ_DIR)/sha256_avx_x16.o\
+		$(OBJ_DIR)/sha256_avx_x8.o\
+		$(OBJ_DIR)/sha256_avx_x4.o\
+		$(OBJ_DIR)/sha256_avx_x1.o\
+		$(OBJ_DIR)/sha256_sse_x1.o\
+		$(OBJ_DIR)/hashtree.o
+endif
 ###############################################################################
 # Commands
 ###############################################################################
@@ -129,16 +130,10 @@ $(OBJ_DIR)/%.o: %.S
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(libname): $(OBJ_LIST)
+	$(AR) rcs $@ $(OBJ_LIST)
 
-ifeq ($(ARM),1)
-$(LIB_DIR)/libhashtree.a: $(objarm)
-	$(AR) rcs $@ $(objarm)
-else
-$(libname): $(objx86)
-	$(AR) rcs $@ $(objx86)
-endif
-
-ifeq ($(WIN),1)
+ifeq ($(PLATFORM),Windows)
 all: $(libname) test
 else
 all: $(libname) test bench
@@ -151,7 +146,7 @@ bench: hashtree.h ubench.h bench.c $(libname)
 	$(CC) $(CFLAGS) $(LDFLAGS) -L$(LIB_DIR) -o $(OUT_DIR)/bench bench.c $(benchlibs)
 
 clean:
-	-rm -f $(objarm) $(objx86) $(LIB_DIR)/libhashtree.a $(LIB_DIR)/libhashtree.lib $(OUT_DIR)/test $(OUT_DIR)/test.exe $(OUT_DIR)/bench hashtree.pc
+	-rm -f $(OBJ_LIST) $(objx86) $(LIB_DIR)/libhashtree.a $(LIB_DIR)/libhashtree.lib $(OUT_DIR)/test $(OUT_DIR)/test.exe $(OUT_DIR)/bench hashtree.pc
 
 ifeq ($(PREFIX),)
 PREFIX := /usr
@@ -170,7 +165,7 @@ hashtree.pc: .FORCE
 	@echo 'LIBS: -L$${libdir} -lhashtree' >> hashtree.pc
 	@echo 'Cflags: -I$${includedir}'>> hashtree.pc
 
-ifneq ($(WIN),1)
+ifneq ($(PLATFORM),Windows)
 install: $(libname) hashtree.pc
 	install -d $(DESTDIR)$(PREFIX)/lib
 	install -m 644 $(libname) $(DESTDIR)$(PREFIX)/lib/ 
