@@ -46,5 +46,5 @@ fn main() {
     }
 
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
-    println!("cargo:rustc-link-lib=static=libhashtree");
+    println!("cargo:rustc-link-lib=static=hashtree");
 }
