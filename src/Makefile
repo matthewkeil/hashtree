@@ -28,6 +28,10 @@ OUT_DIR ?= $(CURDIR)/../build
 OBJ_DIR := $(OUT_DIR)/obj
 LIB_DIR := $(OUT_DIR)/lib
 
+# Ensure these directories exist
+$(shell mkdir -p $(OBJ_DIR))
+$(shell mkdir -p $(LIB_DIR))
+
 ASFLAGS += -g -fpic
 CFLAGS +=  -g -Wall -Werror
 CLANG_ASFLAGS = -fno-integrated-as
@@ -67,13 +71,14 @@ ifneq (,$(findstring aarch64,$(ARCH)))
 endif
 
 # Cross-platform compiler selection
-# ifndef CC
-ifeq ($(PLATFORM),Darwin)
-	CC = clang
-else
-	CC = gcc
+# check for default, skip setting if user passed in specific cross-compilation lib
+ifeq ($(CC), cc)
+	ifeq ($(PLATFORM),Darwin)
+		CC = clang
+	else
+		CC = gcc
+	endif
 endif
-# endif
 
 ifeq ($(CC),clang)
 ifneq ($(ARM),1)
@@ -89,19 +94,9 @@ endif
 
 ifeq ($(PLATFORM),Windows)
 	libname = $(LIB_DIR)/libhashtree.lib
-	AR = ar
 else
 	libname = $(LIB_DIR)/libhashtree.a
-	AR = ar
 endif
-
-###############################################################################
-# Pre-Build Setup
-###############################################################################
-
-# Ensure these directories exist
-$(shell mkdir -p $(OBJ_DIR))
-$(shell mkdir -p $(LIB_DIR))
 
 ifeq ($(ARM), 1)
 	OBJ_LIST = $(OBJ_DIR)/sha256_armv8_neon_x4.o\
@@ -117,6 +112,7 @@ else
 		$(OBJ_DIR)/sha256_sse_x1.o\
 		$(OBJ_DIR)/hashtree.o
 endif
+
 ###############################################################################
 # Commands
 ###############################################################################
