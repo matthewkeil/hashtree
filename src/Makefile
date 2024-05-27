@@ -142,7 +142,7 @@ bench: hashtree.h ubench.h bench.c $(libname)
 	$(CC) $(CFLAGS) $(LDFLAGS) -L$(LIB_DIR) -o $(OUT_DIR)/bench bench.c $(benchlibs)
 
 clean:
-	-rm -f $(OBJ_LIST) $(objx86) $(LIB_DIR)/libhashtree.a $(LIB_DIR)/libhashtree.lib $(OUT_DIR)/test $(OUT_DIR)/test.exe $(OUT_DIR)/bench hashtree.pc
+	-rm -f $(OBJ_LIST) $(LIB_DIR)/libhashtree.a $(LIB_DIR)/libhashtree.lib $(OUT_DIR)/test $(OUT_DIR)/test.exe $(OUT_DIR)/bench hashtree.pc
 
 ifeq ($(PREFIX),)
 PREFIX := /usr
