@@ -67,13 +67,13 @@ ifneq (,$(findstring aarch64,$(ARCH)))
 endif
 
 # Cross-platform compiler selection
-ifndef CC
-	ifeq ($(PLATFORM),Darwin)
-		CC = clang
-	else
-		CC = gcc
-	endif
+# ifndef CC
+ifeq ($(PLATFORM),Darwin)
+	CC = clang
+else
+	CC = gcc
 endif
+# endif
 
 ifeq ($(CC),clang)
 ifneq ($(ARM),1)
