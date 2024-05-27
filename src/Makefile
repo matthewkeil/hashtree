@@ -89,7 +89,7 @@ endif
 
 ifeq ($(PLATFORM),Windows)
 	libname = $(LIB_DIR)/libhashtree.lib
-	AR = lib
+	AR = ar
 else
 	libname = $(LIB_DIR)/libhashtree.a
 	AR = ar
