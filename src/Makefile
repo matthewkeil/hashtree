@@ -20,11 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-ARM = $(shell $(CC) -dM -E - < /dev/null | grep "aarch" | awk '{ print $$3 }')
-WIN = $(shell $(CC) -dM -E - < /dev/null | grep "__WIN64__" | awk '{ print $$3 }')
 
+
+###############################################################################
+# Constants and Configuration Variables
+###############################################################################
 VERSION := 0.1.0
-
+OUT_DIR ?= $(CURDIR)/../build
+OBJ_DIR := $(OUT_DIR)/obj
+LIB_DIR := $(OUT_DIR)/lib
 
 ASFLAGS += -g -fpic
 CFLAGS +=  -g -Wall -Werror
@@ -33,10 +37,47 @@ LDFLAGS += -L .
 testlibs = -lhashtree
 benchlibs = -lhashtree -lm
 
-COMPILER_NAME := $(shell $(CC) --version 2>/dev/null | head -n 1)
-IS_CLANG := $(findstring clang, $(COMPILER_NAME))
+###############################################################################
+# Configuration
+###############################################################################
 
-ifeq ($(IS_CLANG),clang)
+# Platform detection.
+ifndef OS
+    OS := $(shell uname -s)
+endif
+
+ifeq ($(OS),Windows_NT)
+	PLATFORM = Windows
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Darwin)
+		PLATFORM = Darwin
+	else
+		PLATFORM = Linux
+	endif
+endif
+
+# ARM architecture detection
+ARM := 0
+ARMV8 := 0
+ARCH := $(shell uname -m)
+ifneq (,$(findstring arm,$(ARCH)))
+	ARM := 1
+endif
+ifneq (,$(findstring aarch64,$(ARCH)))
+	ARM := 1
+	ARMV8 := 1
+endif
+
+
+# Cross-platform compilation settings.
+ifeq ($(PLATFORM),Darwin)
+	CC = clang
+else
+	CC = gcc
+endif
+
+ifeq ($(CC),clang)
 ifneq ($(ARM),1)
 	ASFLAGS += $(CLANG_ASFLAGS)
 endif
@@ -48,9 +89,15 @@ benchlibs += -lcrypto
 testlibs += -lcrypto
 endif
 
-OUT_DIR ?= $(CURDIR)/../build
-OBJ_DIR := $(OUT_DIR)/obj
-LIB_DIR := $(OUT_DIR)/lib
+ifeq ($(PLATFORM),Windows)
+libname = $(LIB_DIR)/libhashtree.lib
+else
+libname = $(LIB_DIR)/libhashtree.a
+endif
+
+###############################################################################
+# Pre-Build Setup
+###############################################################################
 
 # Ensure these directories exist
 $(shell mkdir -p $(OBJ_DIR))
@@ -69,6 +116,10 @@ objx86 = $(OBJ_DIR)/sha256_shani.o\
          $(OBJ_DIR)/sha256_sse_x1.o\
          $(OBJ_DIR)/hashtree.o
 
+###############################################################################
+# Commands
+###############################################################################
+
 .PHONY : clean .FORCE
 .FORCE: 
 
@@ -78,11 +129,6 @@ $(OBJ_DIR)/%.o: %.S
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ifeq ($(WIN),1)
-libname = $(LIB_DIR)/libhashtree.lib
-else
-libname = $(LIB_DIR)/libhashtree.a
-endif
 
 ifeq ($(ARM),1)
 $(LIB_DIR)/libhashtree.a: $(objarm)
