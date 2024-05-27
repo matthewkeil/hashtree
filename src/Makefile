@@ -88,13 +88,11 @@ testlibs += -lcrypto
 endif
 
 ifeq ($(PLATFORM),Windows)
-	libname = $(LIB_DIR)\libhashtree.lib
+	libname = $(LIB_DIR)/libhashtree.lib
 	AR = lib
-	PATH_SEPARATOR = \\
 else
 	libname = $(LIB_DIR)/libhashtree.a
 	AR = ar
-	PATH_SEPARATOR = /
 endif
 
 ###############################################################################
@@ -106,18 +104,18 @@ $(shell mkdir -p $(OBJ_DIR))
 $(shell mkdir -p $(LIB_DIR))
 
 ifeq ($(ARM), 1)
-	OBJ_LIST = $(OBJ_DIR)$(PATH_SEPARATOR)sha256_armv8_neon_x4.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_armv8_neon_x1.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_armv8_crypto.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)hashtree.o
+	OBJ_LIST = $(OBJ_DIR)/sha256_armv8_neon_x4.o\
+		$(OBJ_DIR)/sha256_armv8_neon_x1.o\
+		$(OBJ_DIR)/sha256_armv8_crypto.o\
+		$(OBJ_DIR)/hashtree.o
 else
-	OBJ_LIST = $(OBJ_DIR)$(PATH_SEPARATOR)sha256_shani.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_avx_x16.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_avx_x8.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_avx_x4.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_avx_x1.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)sha256_sse_x1.o\
-		$(OBJ_DIR)$(PATH_SEPARATOR)hashtree.o
+	OBJ_LIST = $(OBJ_DIR)/sha256_shani.o\
+		$(OBJ_DIR)/sha256_avx_x16.o\
+		$(OBJ_DIR)/sha256_avx_x8.o\
+		$(OBJ_DIR)/sha256_avx_x4.o\
+		$(OBJ_DIR)/sha256_avx_x1.o\
+		$(OBJ_DIR)/sha256_sse_x1.o\
+		$(OBJ_DIR)/hashtree.o
 endif
 ###############################################################################
 # Commands
