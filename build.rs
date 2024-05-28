@@ -65,7 +65,7 @@ fn main() {
 
   let build_target = env::var("TARGET").unwrap();
   if build_target.contains("windows") {
-    println!("cargo:rustc-link-lib=static=:libhashtree.lib");
+    println!("cargo:rustc-link-lib=static=libhashtree");
   } else {
     println!("cargo:rustc-link-lib=static=hashtree");
   }
