@@ -28,39 +28,45 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap_or_else(|_| {
-        let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-        format!("{}/build", manifest_dir)
-    });
+  let out_dir = env::var("OUT_DIR").unwrap_or_else(|_| {
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    format!("{}/build", manifest_dir)
+  });
 
-    let lib_dir = PathBuf::from(&out_dir).join("lib");
-    let src_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+  let lib_dir = PathBuf::from(&out_dir).join("lib");
+  let src_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    let status = Command::new("make")
-        .current_dir(&src_dir)
-        .env("OUT_DIR", &out_dir) // Pass OUT_DIR to makefile if needed
-        .status()
-        .expect("Failed to execute make command");
+  let status = Command::new("make")
+    .current_dir(&src_dir)
+    .env("OUT_DIR", &out_dir) // Pass OUT_DIR to makefile if needed
+    .status()
+    .expect("Failed to execute make command");
 
-    if !status.success() {
-        panic!("Failed to build the C library");
-    }
+  if !status.success() {
+    panic!("Failed to build the C library");
+  }
 
-    println!("cargo:warning=libdir: {}", lib_dir.display());
-    match fs::read_dir(&lib_dir) {
-        Ok(entries) => {
-            for entry in entries {
-                match entry {
-                    Ok(entry) => {
-                        println!("cargo:warning=libdir content: {}", entry.path().display())
-                    }
-                    Err(e) => println!("Error reading entry in libdir: {}", e),
-                }
-            }
+  println!("cargo:warning=libdir: {}", lib_dir.display());
+  match fs::read_dir(&lib_dir) {
+    Ok(entries) => {
+      for entry in entries {
+        match entry {
+          Ok(entry) => {
+            println!("cargo:warning=libdir content: {}", entry.path().display())
+          }
+          Err(e) => println!("Error reading entry in libdir: {}", e),
         }
-        Err(e) => println!("Error reading libdir: {}", e),
+      }
     }
+    Err(e) => println!("Error reading libdir: {}", e),
+  }
 
-    println!("cargo:rustc-link-search=native={}", lib_dir.display());
+  println!("cargo:rustc-link-search=native={}", lib_dir.display());
+
+  let build_target = env::var("TARGET").unwrap();
+  if build_target.contains("windows") {
+    println!("cargo:rustc-link-lib=static=:libhashtree.lib");
+  } else {
     println!("cargo:rustc-link-lib=static=hashtree");
+  }
 }
