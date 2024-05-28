@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -43,6 +44,21 @@ fn main() {
 
     if !status.success() {
         panic!("Failed to build the C library");
+    }
+
+    println!("cargo:warning=libdir: {}", lib_dir.display());
+    match fs::read_dir(&lib_dir) {
+        Ok(entries) => {
+            for entry in entries {
+                match entry {
+                    Ok(entry) => {
+                        println!("cargo:warning=libdir content: {}", entry.path().display())
+                    }
+                    Err(e) => println!("Error reading entry in libdir: {}", e),
+                }
+            }
+        }
+        Err(e) => println!("Error reading libdir: {}", e),
     }
 
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
